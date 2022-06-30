@@ -1,19 +1,11 @@
 import { DataSource, DataSourceOptions, Driver, EntityManager } from 'typeorm';
-import { job } from './Entity/Job';
-import { User } from './Entity/user';
-const dataSourceOptions: DataSourceOptions = {
-  type: 'postgres',
-  host: '127.0.0.1',
-  port: 5432,
-  username: 'postgres',
-  password: '7454939169',
-  database: 'default',
-  entities: [job],
-  synchronize: true,
-};
 
-export const dataSource = new DataSource(dataSourceOptions);
-const isInitialized: boolean = dataSource.isInitialized;
+import { jsonData } from 'ormconfig';
+import { job } from './Entity/Job';
+import { Type } from './interface/typeInterface';
+import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+// export const dataSource = new DataSource(dataSourceOptions);
+// const isInitialized: boolean = dataSource.isInitialized;
 // console.log(isInitialized);
 // const driver: Driver = dataSource.driver;
 // console.log(driver);
@@ -22,3 +14,23 @@ const isInitialized: boolean = dataSource.isInitialized;
 // const users = await manager.find()
 
 // await dataSource.initialize()
+export let map = new Map<number, any>();
+export const mapDataSource = () => {
+  jsonData.forEach((val) => {
+    let key: number = val.uid;
+
+    let dataSourceOptions: PostgresConnectionOptions = {
+      type: val.type,
+      host: val.host,
+      port: val.port,
+      username: val.username,
+      password: val.password,
+      database: val.database,
+      entities: [job],
+      synchronize: true,
+    };
+    const dataSource = new DataSource(dataSourceOptions);
+
+    map.set(key, dataSource);
+  });
+};

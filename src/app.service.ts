@@ -1,46 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { userInterface } from './interface/app.userInterface';
 import { User } from './Entity/user';
-// import { map } from './app.dataSource';
+import { map } from './app.dataSource';
 import { job } from './Entity/Job';
 import { DataSource, DataSourceOptions } from 'typeorm';
-
+import { jsonData } from '../ormconfig';
 @Injectable()
 export class AppService {
-  private dataSourceOptions: DataSourceOptions;
   private dataSource;
-  constructor() {
-    this.dataSourceOptions = {
-      type: 'postgres',
-      host: '127.0.0.1',
-      port: 5432,
-      username: 'postgres',
-      password: '7454939169',
-      database: 'default',
-      entities: [job],
-      synchronize: true,
-    };
-  } // private readonly jobPostrepository: Repository<JobPostEntity>, // @InjectRepository(JobPostEntity)
-  async setDataSourceOptions(uid: number) {
-    this.dataSourceOptions = {
-      type: 'postgres',
-      host: '127.0.0.1',
-      port: 5432,
-      username: 'postgres',
-      password: '7454939169',
-      database: 'default',
-      entities: [job],
-      synchronize: true,
-    };
-  }
-  async createConnection() {
-    this.dataSource = new DataSource(this.dataSourceOptions);
+  constructor() {} // private readonly jobPostrepository: Repository<JobPostEntity>, // @InjectRepository(JobPostEntity)
+
+  async createConnection(uid) {
+    uid = parseInt(uid);
+
+    this.dataSource = map.get(uid);
     await this.dataSource.initialize();
+  }
+  async destroyConnection(uid) {
+    await this.dataSource.destroy();
   }
 
   async createJob(uid: number, Data) {
-    await this.setDataSourceOptions(uid);
-    await this.createConnection();
+    await this.createConnection(uid);
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
 
@@ -61,12 +42,11 @@ export class AppService {
       // you need to release query runner which is manually created:
       await queryRunner.release();
     }
-    await this.dataSource.destroy();
+    this.destroyConnection(uid);
   }
 
-  async getData(uid: number) {
-    await this.setDataSourceOptions(uid);
-    await this.createConnection();
+  async getData(Data) {
+    await this.createConnection(Data.uid);
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -85,7 +65,7 @@ export class AppService {
       // you need to release query runner which is manually created:
       await queryRunner.release();
     }
-    await this.dataSource.destroy();
+    await this.destroyConnection(Data.uid);
     return data;
   }
   // async postData(data: userInterface) {
@@ -101,13 +81,12 @@ export class AppService {
   // }
 
   async getJobById(uid: number, Id: number) {
-    await this.setDataSourceOptions(uid);
-    await this.createConnection();
+    await this.createConnection(uid);
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
 
-    // console.log(await queryRunner.query('Insert into job values(5,5)'));
-    const users = await queryRunner.manager.find(job, { id: Id });
+    console.log(await queryRunner.query(`select * from job where Id = ${Id}`));
+    const users = await queryRunner.manager.findBy(job, { id: Id });
     await queryRunner.startTransaction();
     try {
       // execute some operations on this transaction:
@@ -123,34 +102,65 @@ export class AppService {
       // you need to release query runner which is manually created:
       await queryRunner.release();
     }
-    await this.dataSource.destroy();
+    await this.destroyConnection(uid);
+    return users;
   }
 
-  // async deleteJobById(userId: number, Id: number) {
-  //   const DBName = await this.getData(userId);
-  //   console.log(DBName);
-  //   const ans = await map
-  //     .get(DBName)
-  //     .createQueryBuilder()
-  //     .delete()
-  //     .from(job)
-  //     .where('Id = :id', { id: Id })
-  //     .execute();
-  //   return ans;
-  // }
+  async deleteJobById(uid: number, Id: number) {
+    await this.createConnection(uid);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
 
-  // async updateUser(userId: number, Id: number, Data) {
-  //   const DBName = await this.getData(userId);
-  //   await map
-  //     .get(DBName)
-  //     .createQueryBuilder()
-  //     .update(job)
-  //     .set({
-  //       JobName: Data.jobName,
-  //     })
-  //     .where('Id = :id', { id: Id })
-  //     .execute();
-  // }
+    console.log(await queryRunner.query(`delete from job where Id = ${Id}`));
+    const users = await queryRunner.manager.findBy(job, { id: Id });
+    await queryRunner.startTransaction();
+    try {
+      // execute some operations on this transaction:
+      // await queryRunner.manager.save(job, Data);
+
+      // commit transaction now:
+      await queryRunner.commitTransaction();
+      console.log(await queryRunner.query('SELECT * FROM job'));
+    } catch (err) {
+      // since we have errors let's rollback changes we made
+      await queryRunner.rollbackTransaction();
+    } finally {
+      // you need to release query runner which is manually created:
+      await queryRunner.release();
+    }
+    await this.destroyConnection(uid);
+    return users;
+  }
+
+  async updateUser(uid: number, Id: number, Data) {
+    await this.createConnection(uid);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    console.log(typeof Data.jobName);
+    console.log(
+      await queryRunner.query(
+        `update job set jobname =' ${Data.jobName} ' where Id = ${Id}`,
+      ),
+    );
+    const users = await queryRunner.manager.findBy(job, { id: Id });
+    await queryRunner.startTransaction();
+    try {
+      // execute some operations on this transaction:
+      // await queryRunner.manager.save(job, Data);
+
+      // commit transaction now:
+      await queryRunner.commitTransaction();
+      console.log(await queryRunner.query('SELECT * FROM job'));
+    } catch (err) {
+      // since we have errors let's rollback changes we made
+      await queryRunner.rollbackTransaction();
+    } finally {
+      // you need to release query runner which is manually created:
+      await queryRunner.release();
+    }
+    await this.destroyConnection(uid);
+    return users;
+  }
   // async clearJobs() {
   //   await this.jobPostrepository.clear();
   // }
