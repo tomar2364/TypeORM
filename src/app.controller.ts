@@ -8,7 +8,8 @@ import {
   Post,
 } from '@nestjs/common';
 import { AppService } from './app.service';
-import { jobInterface } from './interface/jobInterface';
+import { policyViolations } from './Entity/policyviolations';
+import { policyVoilationInterface } from './interface/jobInterface';
 
 @Controller()
 export class AppController {
@@ -21,8 +22,11 @@ export class AppController {
   }
   // //insert
   @Post('/:id')
-  createJob(@Param('id') uid: number, @Body() data: jobInterface) {
-    return this.appService.createJob(uid, data);
+  async createJob(
+    @Param('id') uid: number,
+    @Body() data: policyVoilationInterface,
+  ) {
+    return await this.appService.createPolicyViolations(uid, data);
   }
   // // //get by id
   @Get('/:id')
@@ -36,8 +40,11 @@ export class AppController {
   }
   // //update
   @Patch('/:id')
-  updateUserById(@Param('id') id: number, @Body() data: jobInterface) {
-    return this.appService.updateUser(data.userId, id, data);
+  updateUserById(
+    @Param('id') id: number,
+    @Body() data: policyVoilationInterface,
+  ) {
+    return this.appService.updateUser(1, id, data);
   }
   // @Delete()
   // clearData() {

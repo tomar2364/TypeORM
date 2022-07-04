@@ -1,9 +1,10 @@
 import { DataSource, DataSourceOptions, Driver, EntityManager } from 'typeorm';
 
 import { jsonData } from 'ormconfig';
-import { job } from './Entity/Job';
+import { policyViolations } from './Entity/policyviolations';
 import { Type } from './interface/typeInterface';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { policyViolationsmail } from './Entity/policyviolationsmails';
 // export const dataSource = new DataSource(dataSourceOptions);
 // const isInitialized: boolean = dataSource.isInitialized;
 // console.log(isInitialized);
@@ -23,10 +24,11 @@ export const mapDataSource = () => {
       type: val.type,
       host: val.host,
       port: val.port,
+      schema: 'dbo',
       username: val.username,
       password: val.password,
       database: val.database,
-      entities: [job],
+      entities: [policyViolations, policyViolationsmail],
       synchronize: true,
     };
     const dataSource = new DataSource(dataSourceOptions);
